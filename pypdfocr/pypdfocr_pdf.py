@@ -85,10 +85,6 @@ class PyPdf(object):
     regex_fontspec = re.compile('x_font\s+(.+);\s+x_fsize\s+(\d+)')
     regex_textangle = re.compile('textangle\s+(\d+)')
 
-    def __init__(self, gs):
-        self.gs = gs # Pointer to ghostscript object
-
-
     def get_transform(self, rotation, tx, ty):
         # Code taken from here:
         # http://stackoverflow.com/questions/6041244/how-to-merge-two-landscape-pdf-pages-using-pypdf/17392824#17392824

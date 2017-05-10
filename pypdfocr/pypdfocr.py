@@ -34,6 +34,7 @@ forking.Popen = _Popen
 from pypdfocr_pdf import PyPdf
 from pypdfocr_tesseract import PyTesseract
 from pypdfocr_gs import PyGs
+from pypdfocr_rawimages import PyRawImages
 from pypdfocr_watcher import PyPdfWatcher
 from pypdfocr_pdffiler import PyPdfFiler
 from pypdfocr_filer_dirs import PyFilerDirs
@@ -145,6 +146,9 @@ class PyPDFOCR(object):
         p.add_argument('--skip-preprocess', action='store_true',
                 default=False, dest='skip_preprocess', help='DEPRECATED: always skips now.')
 
+        p.add_argument('--use-raw-images', action='store_true',
+                default=False, dest='use_raw_images', help='Use the raw images from the PDF without conversion/compression.')
+
         #---------
         # Single or watch mode
         #--------
@@ -191,6 +195,11 @@ class PyPDFOCR(object):
 
         if args.preprocess:
             self.skip_preprocess = False
+
+        if args.use_raw_images:
+            self.use_raw_images = True
+        else:
+            self.use_raw_images = False
 
         if self.debug:
             logging.basicConfig(level=logging.DEBUG, format='%(message)s')
@@ -316,9 +325,12 @@ class PyPDFOCR(object):
             Instantiate the external tool wrappers with their config dicts
         """
 
-        self.gs = PyGs(self.config.get('ghostscript',{}))
+        if self.use_raw_images:
+            self.image_extractor = PyRawImages()
+        else:
+            self.image_extractor = PyGs(self.config.get('ghostscript',{}))
         self.ts = PyTesseract(self.config.get('tesseract',{}))
-        self.pdf = PyPdf(self.gs)
+        self.pdf = PyPdf()
         self.preprocess = PyPreprocess(self.config.get('preprocess', {}))
 
         return
@@ -340,7 +352,7 @@ class PyPDFOCR(object):
         print ("Starting conversion of %s" % pdf_filename)
         try:
             # Make the images for Tesseract
-            img_dpi, glob_img_filename = self.gs.make_img_from_pdf(pdf_filename)
+            img_dpi, glob_img_filename = self.image_extractor.make_img_from_pdf(pdf_filename)
 
             fns = glob.glob(glob_img_filename)
         
